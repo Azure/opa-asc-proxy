@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: etcd
+  namespace: production
+spec:
+  containers:
+    - name: etcd1
+      image: upstream.azurecr.io/oss/etcd-io/etcd:v3.3.12 #oss/open-policy-agent/gatekeeper #oss/kubernetes/ingress/nginx-ingress-controller #oss/open-policy-agent/opa 
+      resources:
+        limits:
+          cpu: "100m"
+          memory: "30Mi"
+    # - name: etcd2
+    #   image: ritazh/etcd:v3.3.12
+    #   resources:
+    #     limits:
+    #       cpu: "100m"
+    #       memory: "30Mi"

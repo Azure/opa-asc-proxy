@@ -1,0 +1,54 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: securitycenter
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: securitycenter
+    spec:
+      containers:
+      - image: ritazh/securitycenter:0.0.1
+        imagePullPolicy: Always
+        name: securitycenter
+        env:
+        - name: SUBSCRIPTION_ID
+          valueFrom:
+            secretKeyRef:
+              name: azcred
+              key: subscriptionid
+        - name: CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: azcred
+              key: clientid
+        - name: CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: azcred
+              key: clientsecret
+        - name: TENANT_ID
+          valueFrom:
+            secretKeyRef:
+              name: azcred
+              key: tenantid
+        ports:
+        - containerPort: 8090
+          protocol: TCP
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: securitycenter
+spec:
+  ports:
+  - port: 8090
+    protocol: TCP
+    targetPort: 8090
+  selector:
+    run: securitycenter
+  sessionAffinity: None
+  type: LoadBalancer
