@@ -8,8 +8,13 @@ ARG IMAGE_VERSION=0.0.1
 RUN make build
 
 FROM alpine:3.10.3
-RUN apk add --no-cache bash
+RUN apk update && apk add --no-cache \
+    bash \
+    curl \
+    jq
 COPY --from=builder /go/src/github.com/Azure/securitycenter-opa/securitycenter-opa /bin/
+COPY getimagesha.sh /
 RUN chmod a+x /bin/securitycenter-opa
+RUN chmod a+x /getimagesha.sh
 
 ENTRYPOINT ["/bin/securitycenter-opa"]

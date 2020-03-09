@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	//"fmt"
@@ -8,7 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	//"os/exec"
+	"os/exec"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
@@ -37,7 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("[error] : %v", err)
 	}
-	http.HandleFunc("/", handle)
+	http.HandleFunc("/process", handle)
 	http.ListenAndServe(":8090", nil)
 
 	os.Exit(0)
@@ -45,14 +47,72 @@ func main() {
 
 func handle(w http.ResponseWriter, req *http.Request) { 
 	w.Header().Set("Content-Type", "application/json")
-	data, err := server.Process(ctx, req)
-	if err != nil {
-		log.Infof("[error] : %s", err)
+	
+	image := req.URL.Query().Get("image") // e.g. : oss/kubernetes/aks/etcd-operator
+	if image == "" {
+		log.Info("Failed to provide image to query")
 		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(data)
+		json.NewEncoder(w).Encode(nil)
+	}
+	registry := req.URL.Query().Get("registry") // e.g. : upstream.azurecr.io
+	if registry == "" {
+		log.Info("Failed to provide registry to query")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(nil)
+	}
+	
+	// registry := "upstream.azurecr.io"
+	// repo := "oss/kubernetes/ingress/nginx-ingress-controller"
+	// tag := "0.16.2"
+	repo := image
+	tag := "latest"
+	if strings.Contains(image, ":") {
+		repo = strings.Split(image, ":")[0]
+		tag = strings.Split(image, ":")[1]
+	}
+	
+	getImageShaBinary := "getimagesha.sh"
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	cmd := exec.Command(
+		"sh",
+		getImageShaBinary,
+		registry,
+		repo,
+		tag,
+	)
+	log.Infof("cmd: %v", cmd)
+	cmd.Dir = dir
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd.Stderr, cmd.Stdout = stderr, stdout
+
+	err = cmd.Run()
+	output := stdout.String()
+	log.Infof("output: %s",output)
+	if err != nil {
+		log.Errorf("error invoking cmd, err: %v, output: %v", err, stderr.String())
+	}
+	if output == "null\n" {
+		log.Infof("[error] : could not find valid digest %s", output)
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(nil)
 	} else {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(data)
+		digest := strings.TrimSuffix(output, "\n")
+		log.Infof("digest: %s",digest)
+	
+		data, err := server.Process(ctx, digest)
+		if err != nil {
+			log.Infof("[error] : %s", err)
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(data)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(data)
+		}
 	}
 }
 

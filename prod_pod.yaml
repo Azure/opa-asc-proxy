@@ -6,7 +6,7 @@ metadata:
 spec:
   containers:
     - name: etcd1
-      image: upstream.azurecr.io/oss/etcd-io/etcd:v3.3.12 #oss/open-policy-agent/gatekeeper #oss/kubernetes/ingress/nginx-ingress-controller #oss/open-policy-agent/opa 
+      image: upstream.azurecr.io/oss/kubernetes/ingress/nginx-ingress-controller:0.16.2 #oss/etcd-io/etcd:v3.3.12 #oss/open-policy-agent/gatekeeper #oss/kubernetes/ingress/nginx-ingress-controller #oss/open-policy-agent/opa 
       resources:
         limits:
           cpu: "100m"

@@ -31,28 +31,20 @@ spec:
           container := input_containers[_]
           satisfied := [good | repo = input.parameters.repos[_] ; good = startswith(container.image, repo)]
           all(satisfied)
-          image := get_image(container.image, input.parameters.repos[_])
-          url := sprintf("http://localhost:8090?image=%v", [image])
+          repo := input.parameters.repos[_]
+          image := get_image(container.image, repo)
+          url := sprintf("http://localhost:8090/process?registry=%v&image=%v", [repo, image])
           response := http.send({"method": "get", "url": url})
+          
+          response.status_code == 200
           count(response.body) > 0
           msg := sprintf("Detected %v vulnerabilities for image %v, impact: %v", [count(response.body), image, response.body[0].impact])
         }
 
         get_image(i, repo) = out {
           r := sprintf("%v/", [repo])
-          t = replace(i, r, "")
-          index = indexof(t, ":")
-          index > -1
-          out = substring(t, 0, index)
-        } 
-
-        get_image(i, repo) = out {
-          r := sprintf("%v/", [repo])
-          t = replace(i, r, "")
-          index = indexof(t, ":")
-          index == -1
-          out = t
-        }        
+          out = replace(i, r, "")
+        }
 
         input_containers[c] {
             c := input.review.object.spec.containers[_]

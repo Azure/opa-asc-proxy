@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	// "io/ioutil"
-	"net/http"
+	//"net/http"
 	"os"
 	// "path"
 	// "regexp"
@@ -138,6 +138,23 @@ func ParseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 	return &env, err
 }
 
+// GetAcrToken retrieves a new service principal token
+func (s *Server) GetAcrToken(grantType OAuthGrantType, cloudName string) (authorizer autorest.Authorizer, err error) {
+
+	env, err := ParseAzureEnvironment(cloudName)
+	if err != nil {
+		return nil, err
+	}
+
+	acrEndPoint := env.ContainerRegistryDNSSuffix
+	servicePrincipalToken, err := s.GetServicePrincipalToken(env, acrEndPoint)
+	if err != nil {
+		return nil, err
+	}
+	authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
+	return authorizer, nil
+}
+
 // GetManagementToken retrieves a new service principal token
 func (s *Server) GetManagementToken(grantType OAuthGrantType, cloudName string) (authorizer autorest.Authorizer, err error) {
 
@@ -173,12 +190,42 @@ func (s *Server) GetServicePrincipalToken(env *azure.Environment, resource strin
 	return nil, fmt.Errorf("No credentials provided for AAD application %s", s.AADClientID)
 }
 
+// // Process request to get all vulnerabilities from an image tag
+// func (s *Server) Process(ctx context.Context, req *http.Request) (resps []Response, err error) {
+// 	resps = make([]Response, 0)
+// 	image := "oss/kubernetes/ingress/nginx-ingress-controller" // req.URL.Query().Get("image") // e.g. : oss/kubernetes/aks/etcd-operator:latest
+//   	if image == "" {
+// 		return nil, fmt.Errorf("Failed to provide image to query")
+// 	}
+// 	sha := "sha256:4f76757aacbf9a916373caf30c580246678141b9e1521957233b4dca8db2f499"
+// 	loginURI := "upstream.azurecr.io"
+// 	accept := "application/vnd.docker.distribution.manifest.v2+json"
+// 	scope := "registry:catalog:*"
+// 	myClient := acr.NewManifestsClient(loginURI)
+// 	authClient := acr.NewAccessTokensClient(loginURI)
+// 	token, tokenErr := s.GetAcrToken(AuthGrantType(), cloudName)
+// 	if tokenErr != nil {
+// 		return nil, errors.Wrapf(tokenErr, "failed to get acr token")
+// 	}
+// 	authClient.Authorizer = token
+// 	accesstoken, err := authClient.GetFromLogin(ctx, loginURI, scope)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	log.Debugf("token: %v", accesstoken)
+// 	manifest, err := myClient.Get(ctx, image, sha, accept)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	log.Debugf("manifest: %v", manifest)
+// 	return resps, nil
+// }
+
 // ProcessAssessmentImageDigest uses resource group to get all vulnerable image digests
 //func (s *Server) ProcessAssessmentImageDigest(ctx context.Context, req *http.Request) (resps []Response, err error) {
-func (s *Server) Process(ctx context.Context, req *http.Request) (resps []Response, err error) {
-	image := req.URL.Query().Get("image") // e.g. : oss/kubernetes/aks/etcd-operator
-  	if image == "" {
-		return nil, fmt.Errorf("Failed to provide image to query")
+func (s *Server) Process(ctx context.Context, digest string) (resps []Response, err error) {
+  	if digest == "" {
+		return nil, fmt.Errorf("Failed to provide digest to query")
 	}
 	myClient := azresourcegraph.New()
 	token, tokenErr := s.GetManagementToken(AuthGrantType(), cloudName)
@@ -193,8 +240,9 @@ func (s *Server) Process(ctx context.Context, req *http.Request) (resps []Respon
 	| extend status = tostring(properties["status"].code)
 	| where resourceType == "ContainerRegistryVulnerability" 
 	| extend repoName = tostring(properties["additionalData"].repositoryName) 
+	| extend imageSha = tostring(properties["additionalData"].imageDigest)
 	| where status == "Unhealthy"
-	| where repoName == "` + image + `"`
+	| where imageSha == "` + digest + `"`
 
 	options := azresourcegraph.QueryRequestOptions {
 		ResultFormat: azresourcegraph.ResultFormatObjectArray,
