@@ -1,4 +1,4 @@
-module github.com/Azure/securitycenter-opa
+module github.com/Azure/opa-asc-proxy
 
 go 1.12
 
@@ -11,7 +11,6 @@ require (
 	github.com/Azure/go-autorest/autorest/validation v0.2.0 // indirect
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20200201011441-b56df07ae2b8 // indirect
 	github.com/pkg/errors v0.8.1
-	github.com/ritazh/tracee-grpc v0.0.0-20200104031226-eca42aed9af9 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.5

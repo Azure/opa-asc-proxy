@@ -1,18 +1,21 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: securitycenter
+  name: opa-asc-proxy
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      run: opa-asc-proxy
   template:
     metadata:
       labels:
-        run: securitycenter
+        run: opa-asc-proxy
     spec:
       containers:
-      - image: ritazh/securitycenter:0.0.1
+      - image: ritazh/opa-asc-proxy:0.0.1
         imagePullPolicy: Always
-        name: securitycenter
+        name: opa-asc-proxy
         env:
         - name: SUBSCRIPTION_ID
           valueFrom:
@@ -42,13 +45,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: securitycenter
+  name: opa-asc-proxy
 spec:
   ports:
   - port: 8090
     protocol: TCP
     targetPort: 8090
   selector:
-    run: securitycenter
+    run: opa-asc-proxy
   sessionAffinity: None
-  type: LoadBalancer
+  type: LoadBalancer # This is just for testing right now

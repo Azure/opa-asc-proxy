@@ -305,9 +305,9 @@ spec:
         gatekeeper.sh/system: "yes"
     spec:
       containers:
-      - image: ritazh/securitycenter:0.0.1
+      - image: ritazh/opa-asc-proxy:0.0.1
         imagePullPolicy: Always
-        name: securitycenter
+        name: asc-proxy
         env:
         - name: SUBSCRIPTION_ID
           valueFrom:

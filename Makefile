@@ -2,7 +2,7 @@ IMAGE_VERSION ?= 0.0.1
 BUILD_DATE=$$(date +%Y-%m-%d-%H:%M)
 GO_FILES=$(shell go list ./...)
 REGISTRY ?= ritazh
-DOCKER_IMAGE ?= $(REGISTRY)/securitycenter
+DOCKER_IMAGE ?= $(REGISTRY)/opa-asc-proxy
 
 GO111MODULE ?= on
 export GO111MODULE

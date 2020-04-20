@@ -33,7 +33,7 @@ spec:
           all(satisfied)
           repo := input.parameters.repos[_]
           image := get_image(container.image, repo)
-          url := sprintf("http://localhost:8090/process?registry=%v&image=%v", [repo, image])
+          url := sprintf("http://10.0.186.86:8090/process?registry=%v&image=%v", [repo, image])
           response := http.send({"method": "get", "url": url})
           
           response.status_code == 200
