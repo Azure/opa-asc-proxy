@@ -42,6 +42,7 @@ func main() {
 		log.Fatalf("[error] : %v", err)
 	}
 	http.HandleFunc("/processDigest", handleDigest)
+	http.HandleFunc("/process", handle)
 	http.ListenAndServe(":8090", nil)
 
 	os.Exit(0)
