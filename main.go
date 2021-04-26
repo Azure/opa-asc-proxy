@@ -4,23 +4,25 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"os/exec"
+	"strings"
+
 	//"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 )
 
 var (
-	debug      = pflag.Bool("debug", true, "sets log to debug level")
+	debug  = pflag.Bool("debug", true, "sets log to debug level")
 	server *Server
-	ctx      context.Context
+	ctx    context.Context
 )
+
 // LogHook is used to setup custom hooks
 type LogHook struct {
 	Writer    io.Writer
@@ -39,44 +41,39 @@ func main() {
 	if err != nil {
 		log.Fatalf("[error] : %v", err)
 	}
-	http.HandleFunc("/process", handle)
+	http.HandleFunc("/processDigest", handleDigest)
 	http.ListenAndServe(":8090", nil)
 
 	os.Exit(0)
 }
 
-func handle(w http.ResponseWriter, req *http.Request) { 
+func handle(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	image := req.URL.Query().Get("image") // e.g. : oss/kubernetes/aks/etcd-operator
 	if image == "" {
 		log.Info("Failed to provide image to query")
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(nil)
 	}
-	registry := req.URL.Query().Get("registry") // e.g. : upstream.azurecr.io
-	if registry == "" {
-		log.Info("Failed to provide registry to query")
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(nil)
-	}
-	
+
 	// registry := "upstream.azurecr.io"
 	// repo := "oss/kubernetes/ingress/nginx-ingress-controller"
 	// tag := "0.16.2"
-	repo := image
+	registry := strings.Split(image, "/")[0]
+	repo := strings.Replace(image, registry + "/", "", 1)
 	tag := "latest"
-	if strings.Contains(image, ":") {
-		repo = strings.Split(image, ":")[0]
-		tag = strings.Split(image, ":")[1]
+	if strings.Contains(repo, ":") {
+		tag = strings.Split(repo, ":")[1]
+		repo = strings.Replace(repo, ":" + tag, "", 1)
 	}
-	
+
 	getImageShaBinary := "getimagesha.sh"
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	cmd := exec.Command(
 		"sh",
 		getImageShaBinary,
@@ -103,7 +100,7 @@ func handle(w http.ResponseWriter, req *http.Request) {
 	} else {
 		digest := strings.TrimSuffix(output, "\n")
 		log.Infof("digest: %s",digest)
-	
+
 		data, err := server.Process(ctx, digest)
 		if err != nil {
 			log.Infof("[error] : %s", err)
@@ -113,6 +110,23 @@ func handle(w http.ResponseWriter, req *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(data)
 		}
+	}
+}
+
+func handleDigest(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	image := req.URL.Query().Get("image")
+	imageSplit := strings.Split(image, "@")
+
+	data, err := server.Process(ctx, imageSplit[1])
+	if err != nil {
+		log.Infof("[error] : %s", err)
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(data)
+	} else {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(data)
 	}
 }
 

@@ -22,12 +22,12 @@ endif
 .PHONY: build
 build: setup
 	@echo "Building..."
-	$Q GOOS=${GOOS_FLAG} CGO_ENABLED=0 go build -ldflags "-X main.BuildDate=$(BUILD_DATE) -X main.BuildVersion=$(IMAGE_VERSION)" . 
+	$Q GOOS=${GOOS_FLAG} CGO_ENABLED=0 go build -ldflags "-X main.BuildDate=$(BUILD_DATE) -X main.BuildVersion=$(IMAGE_VERSION)" .
 
 image:
 # build inside docker container
 	@echo "Building docker image..."
-	$Q docker build --no-cache -t $(DOCKER_IMAGE):$(IMAGE_VERSION) --build-arg IMAGE_VERSION="$(IMAGE_VERSION)" .
+	$Q docker buildx build -t $(DOCKER_IMAGE):$(IMAGE_VERSION) --build-arg IMAGE_VERSION="$(IMAGE_VERSION)" --push .
 
 setup:
 	@echo "Setup..."

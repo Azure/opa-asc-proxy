@@ -35,7 +35,7 @@ spec:
           image := get_image(container.image, repo)
           url := sprintf("http://10.0.186.86:8090/process?registry=%v&image=%v", [repo, image])
           response := http.send({"method": "get", "url": url})
-          
+
           response.status_code == 200
           count(response.body) > 0
           msg := sprintf("Detected %v vulnerabilities for image %v, impact: %v", [count(response.body), image, response.body[0].impact])

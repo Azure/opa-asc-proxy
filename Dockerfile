@@ -11,7 +11,8 @@ FROM alpine:3.10.3
 RUN apk update && apk add --no-cache \
     bash \
     curl \
-    jq
+    jq \
+    coreutils
 COPY --from=builder /go/src/github.com/Azure/opa-asc-proxy/opa-asc-proxy /bin/
 COPY getimagesha.sh /
 RUN chmod a+x /bin/opa-asc-proxy
