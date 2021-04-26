@@ -56,7 +56,6 @@ func handle(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(nil)
 	}
-
 	// registry := "upstream.azurecr.io"
 	// repo := "oss/kubernetes/ingress/nginx-ingress-controller"
 	// tag := "0.16.2"
