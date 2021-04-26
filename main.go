@@ -54,21 +54,16 @@ func handle(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(nil)
 	}
-	registry := req.URL.Query().Get("registry") // e.g. : upstream.azurecr.io
-	if registry == "" {
-		log.Info("Failed to provide registry to query")
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(nil)
-	}
 	
 	// registry := "upstream.azurecr.io"
 	// repo := "oss/kubernetes/ingress/nginx-ingress-controller"
 	// tag := "0.16.2"
-	repo := image
+	registry := strings.Split(image, "/")[0]
+	repo := strings.Replace(image, registry + "/", "", 1)
 	tag := "latest"
-	if strings.Contains(image, ":") {
-		repo = strings.Split(image, ":")[0]
-		tag = strings.Split(image, ":")[1]
+	if strings.Contains(repo, ":") {
+		tag = strings.Split(repo, ":")[1]
+		repo = strings.Replace(repo, ":" + tag, "", 1)
 	}
 	
 	getImageShaBinary := "getimagesha.sh"
