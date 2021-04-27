@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opa-asc-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: opa-asc-proxy
+  template:
+    metadata:
+      labels:
+        run: opa-asc-proxy
+    spec:
+      containers:
+      - image: ritazh/opa-asc-proxy:0.0.2
+        imagePullPolicy: Always
+        name: opa-asc-proxy
+        env:
+        - name: SUBSCRIPTION_ID
+          valueFrom:
+            secretKeyRef:
+              name: azcred
+              key: subscriptionid
+        - name: CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: azcred
+              key: clientid
+        - name: CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: azcred
+              key: clientsecret
+        - name: TENANT_ID
+          valueFrom:
+            secretKeyRef:
+              name: azcred
+              key: tenantid
+        ports:
+        - containerPort: 8090
+          protocol: TCP
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opa-asc-proxy
+spec:
+  ports:
+  - port: 8090
+    protocol: TCP
+    targetPort: 8090
+  selector:
+    run: opa-asc-proxy
+  sessionAffinity: None
+  type: LoadBalancer # This is just for testing right now
