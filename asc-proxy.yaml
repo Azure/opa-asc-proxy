@@ -13,7 +13,7 @@ spec:
         run: opa-asc-proxy
     spec:
       containers:
-      - image: ritazh/opa-asc-proxy:0.0.1
+      - image: ritazh/opa-asc-proxy:0.0.2
         imagePullPolicy: Always
         name: opa-asc-proxy
         env:
