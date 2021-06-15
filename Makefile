@@ -27,7 +27,7 @@ build: setup
 image:
 # build inside docker container
 	@echo "Building docker image..."
-	$Q docker buildx build -t $(DOCKER_IMAGE):$(IMAGE_VERSION) --build-arg IMAGE_VERSION="$(IMAGE_VERSION)" --push .
+	$Q docker build --no-cache -t $(DOCKER_IMAGE):$(IMAGE_VERSION) --build-arg IMAGE_VERSION="$(IMAGE_VERSION)" .
 
 setup:
 	@echo "Setup..."
