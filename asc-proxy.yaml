@@ -54,4 +54,3 @@ spec:
   selector:
     run: opa-asc-proxy
   sessionAffinity: None
-  type: LoadBalancer # This is just for testing right now

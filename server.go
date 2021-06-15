@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+
 	// "io/ioutil"
 	//"net/http"
 	"os"
@@ -12,10 +13,11 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
+
 	// yaml "gopkg.in/yaml.v2"
-	"github.com/Azure/go-autorest/autorest/date"
 	azsecurity "github.com/Azure/azure-sdk-for-go/services/preview/security/mgmt/v3.0/security"
 	azresourcegraph "github.com/Azure/azure-sdk-for-go/services/resourcegraph/mgmt/2019-04-01/resourcegraph"
+	"github.com/Azure/go-autorest/autorest/date"
 
 	//acrmgmt "github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/mgmt/2018-02-01/containerregistry"
 	//acr "github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
@@ -41,7 +43,7 @@ func AuthGrantType() OAuthGrantType {
 	return OAuthGrantTypeServicePrincipal
 }
 
-// Server 
+// Server
 type Server struct {
 	// subscriptionId to azure
 	SubscriptionID string
@@ -224,7 +226,7 @@ func (s *Server) GetServicePrincipalToken(env *azure.Environment, resource strin
 // ProcessAssessmentImageDigest uses resource group to get all vulnerable image digests
 //func (s *Server) ProcessAssessmentImageDigest(ctx context.Context, req *http.Request) (resps []Response, err error) {
 func (s *Server) Process(ctx context.Context, digest string) (resps []Response, err error) {
-  	if digest == "" {
+	if digest == "" {
 		return nil, fmt.Errorf("Failed to provide digest to query")
 	}
 	myClient := azresourcegraph.New()
@@ -235,11 +237,11 @@ func (s *Server) Process(ctx context.Context, digest string) (resps []Response, 
 	myClient.Authorizer = token
 	subs := []string{s.SubscriptionID}
 	rawQuery := `
-	securityresources | where type == "microsoft.security/assessments/subassessments" 
-	| extend resourceType = tostring(properties["additionalData"].assessedResourceType) 
+	securityresources | where type == "microsoft.security/assessments/subassessments"
+	| extend resourceType = tostring(properties["additionalData"].assessedResourceType)
 	| extend status = tostring(properties["status"].code)
-	| where resourceType == "ContainerRegistryVulnerability" 
-	| extend repoName = tostring(properties["additionalData"].repositoryName) 
+	| where resourceType == "ContainerRegistryVulnerability"
+	| extend repoName = tostring(properties["additionalData"].repositoryName)
 	| extend imageSha = tostring(properties["additionalData"].imageDigest)
 	| where status == "Unhealthy"
 	| where imageSha == "` + digest + `"`
@@ -268,7 +270,6 @@ func (s *Server) Process(ctx context.Context, digest string) (resps []Response, 
 		if err != nil {
 			return nil, err
 		}
-		
 		for _, v := range data {
 			rd, _ := v.SubAssessmentProperties.ResourceDetails.AsAzureResourceDetails()
 			ad, _ := v.SubAssessmentProperties.AdditionalData.AsContainerRegistryVulnerabilityProperties()
@@ -297,7 +298,7 @@ func (s *Server) Process(ctx context.Context, digest string) (resps []Response, 
 			//log.Debugf("resp: %s", *resp.AdditionalData.RepositoryName)
 			resps = append(resps, resp)
 			// prop, _ := v.SubAssessmentProperties.AdditionalData.AsContainerRegistryVulnerabilityProperties()
-		
+
 			// //message = message + fmt.Sprintf("name: %s | repo: %s \n", *v.DisplayName, *prop.RepositoryName)
 			//log.Debugf("name: %s | repo: %s ", *v.DisplayName, *prop.RepositoryName)
 
@@ -312,7 +313,7 @@ func (s *Server) Process(ctx context.Context, digest string) (resps []Response, 
 // ProcessAssessmentAPIs uses assessment apis to return all vulnerable image digests
 func (s *Server) ProcessAssessmentAPIs(ctx context.Context) (msg *string, err error) {
 	assessmentName := "dbd0cb49-b563-45e7-9724-889e799fa648"
-	
+
 	myClient := azsecurity.NewSubAssessmentsClient(s.SubscriptionID, s.Location)
 	token, tokenErr := s.GetManagementToken(AuthGrantType(), cloudName)
 	if tokenErr != nil {
